@@ -1,0 +1,334 @@
+﻿**********************************************************************************************************
+
+Scaffold-DbContext "server=localhost;port=3306;user=root;password=Doitnew*1;database=cms" Pomelo.EntityFrameworkCore.MySql -OutputDir Repository -f
+Scaffold-DbContext "server=localhost;port=3306;user=root;password=Jo@july3;database=cms" Pomelo.EntityFrameworkCore.MySql -OutputDir Repository -f
+
+***********************************************************************************************************
+
+ ALTER TABLE booking
+ADD JourneyId int;
+ ALTER TABLE booking
+ADD CONSTRAINT FK_JourneyId
+FOREIGN KEY (JourneyId) REFERENCES Journey(Id);
+
+ ALTER TABLE journey
+ADD Name varchar(100) NOT NULL;
+
+
+alter table journey add  `CreatorHubId` int NOT NULL default(2),
+ADD FOREIGN KEY  `journey_ibfk_4`(`CreatorHubId`) REFERENCES `hub` (`Id`)
+
+alter table journey add  `IsLocal` bool NOT NULL default(false)
+
+-- delete from journey;
+-- delete from journeyitems;
+-- delete from booking;
+-- delete from bookingitems;
+-- delete from bookingfiles;
+-- delete from bookingtransactions
+
+--------------------------------------------------------------------------------------
+
+ALTER TABLE `cms`.`bookingitemsdistribution` 
+ADD COLUMN `ReceivedQty` INT NOT NULL DEFAULT '0' AFTER `InTransitQty`;
+
+--------------------------------------------------------------------------------------
+
+ALTER TABLE `cms`.`bookingitems` 
+ADD COLUMN `ReceivedQty` INT NOT NULL DEFAULT '0' AFTER `InTransitQty`;
+
+--------------------------------------------------------------------------------------
+
+ALTER TABLE `cms`.`journeyexpenses` 
+DROP FOREIGN KEY `journeyexpenses_ibfk_1`;
+ALTER TABLE `cms`.`journeyexpenses` 
+CHANGE COLUMN `JourneyId` `JourneyId` INT NULL DEFAULT NULL ;
+ALTER TABLE `cms`.`journeyexpenses` 
+ADD CONSTRAINT `journeyexpenses_ibfk_1`
+  FOREIGN KEY (`JourneyId`)
+  REFERENCES `cms`.`journey` (`Id`);
+
+--------------------------------------------------------------------------------------
+// change to cascade detet option for Journey Delete 21/04/2022
+ALTER TABLE `cms`.`journeyitems` 
+DROP FOREIGN KEY `journeydetails_ibfk_3`;
+ALTER TABLE `cms`.`journeyitems` 
+ADD CONSTRAINT `journeydetails_ibfk_3`
+  FOREIGN KEY (`JourneyId`)
+  REFERENCES `cms`.`journey` (`Id`)
+  ON DELETE RESTRICT
+  ON UPDATE RESTRICT;
+  --------------------------------------------------------------------------------------
+
+  ALTER TABLE `cms`.`journey` 
+ADD COLUMN `ContainerId` VARCHAR(45) NOT NULL AFTER `DestinationHubId`;
+
+ --------------------------------------------------------------------------------------
+
+ALTER TABLE `cms`.`journeyitems` 
+ADD COLUMN `PaymentMode` VARCHAR(5) NULL AFTER `Quantity`,
+ADD COLUMN `UnitPrice` DECIMAL(18,2) NOT NULL AFTER `PaymentMode`,
+ADD COLUMN `PaidBy` INT NULL DEFAULT NULL AFTER `UnitPrice`,
+ADD COLUMN `PaymentDate` DATETIME NULL DEFAULT NULL AFTER `PaidBy`,
+ADD COLUMN `PaidAmount` DECIMAL(18,2) NULL DEFAULT NULL AFTER `PaymentDate`,
+CHANGE COLUMN `Status` `Status` CHAR(1) NULL DEFAULT NULL AFTER `PaidAmount`;
+
+--------------------------------------------------------------------------------------
+
+ALTER TABLE `cms`.`journey` 
+DROP FOREIGN KEY `journey_ibfk_3`;
+ALTER TABLE `cms`.`journey` 
+CHANGE COLUMN `DriverId` `DriverId` INT NULL DEFAULT NULL ,
+DROP INDEX `DriverId` ;
+;
+
+--------------------------------------------------------------------------------------
+ALTER TABLE `cms`.`booking` 
+ADD COLUMN `IsCash` TINYINT(1) NULL DEFAULT 1 AFTER `Notes`;
+
+
+--------------------------------------------------------------------------------------
+
+26-05-2022 Major changes 
+
+CREATE TABLE `cms`.`shipmentmode` (
+  `ShipmentId` VARCHAR(2) NOT NULL,
+  `ShipmentName` VARCHAR(45) NOT NULL,
+  `CreatedDate` DATETIME NULL DEFAULT NULL,
+  `CreatedBy` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`ShipmentId`));
+  
+--------------------------------------------------------------------------------------
+INSERT INTO `cms`.`shipmentmode`
+(`ShipmentId`,`ShipmentName`,`CreatedDate`,`CreatedBy`)
+VALUES('RO','Road',null,null),('RA','Rail',null,null),('AI','Air',null,null);
+--------------------------------------------------------------------------------------
+
+ALTER TABLE `cms`.`booking` 
+ADD COLUMN `ShipmentMode` VARCHAR(2) NULL DEFAULT NULL AFTER `StatusId`,
+ADD INDEX `booking_fkshipment_idx` (`ShipmentMode` ASC) VISIBLE;
+;
+ALTER TABLE `cms`.`booking` 
+ADD CONSTRAINT `booking_fkshipment`
+  FOREIGN KEY (`ShipmentMode`)
+  REFERENCES `cms`.`shipmentmode` (`ShipmentId`)
+  ON DELETE RESTRICT
+  ON UPDATE RESTRICT;
+
+  --------------------------------------------------------------------------------------
+
+  ALTER TABLE `cms`.`customer` 
+CHANGE COLUMN `IsCreditAllowed` `IsCreditAllowed` TINYINT(1) NULL DEFAULT 0 ;
+
+  --------------------------------------------------------------------------------------
+ALTER TABLE `cms`.`customeraddresses` 
+DROP FOREIGN KEY `customeraddresses_ibfk_1`,
+DROP FOREIGN KEY `customeraddresses_ibfk_2`,
+DROP FOREIGN KEY `customeraddresses_ibfk_3`;
+ALTER TABLE `cms`.`customeraddresses` 
+CHANGE COLUMN `Address` `Address` VARCHAR(200) NULL DEFAULT NULL ,
+CHANGE COLUMN `StateId` `StateId` INT NULL DEFAULT NULL ,
+CHANGE COLUMN `DistrictId` `DistrictId` INT NULL DEFAULT NULL ,
+CHANGE COLUMN `LocationId` `LocationId` INT NULL DEFAULT NULL ,
+CHANGE COLUMN `Pincode` `Pincode` CHAR(6) NULL DEFAULT NULL ;
+ALTER TABLE `cms`.`customeraddresses` 
+ADD CONSTRAINT `customeraddresses_ibfk_1`
+  FOREIGN KEY (`StateId`)
+  REFERENCES `cms`.`state` (`Id`),
+ADD CONSTRAINT `customeraddresses_ibfk_2`
+  FOREIGN KEY (`DistrictId`)
+  REFERENCES `cms`.`district` (`Id`),
+ADD CONSTRAINT `customeraddresses_ibfk_3`
+  FOREIGN KEY (`LocationId`)
+  REFERENCES `cms`.`location` (`Id`);
+
+  --------------------------------------------------------------------------------------
+
+  ALTER TABLE `cms`.`booking` 
+DROP FOREIGN KEY `booking_ibfk_2`,
+DROP FOREIGN KEY `booking_ibfk_4`;
+ALTER TABLE `cms`.`booking` 
+CHANGE COLUMN `CustomerAddressId` `CustomerAddressId` INT NULL DEFAULT NULL ,
+CHANGE COLUMN `ReceipientCustomerAddressId` `ReceipientCustomerAddressId` INT NULL DEFAULT NULL ;
+ALTER TABLE `cms`.`booking` 
+ADD CONSTRAINT `booking_ibfk_2`
+  FOREIGN KEY (`CustomerAddressId`)
+  REFERENCES `cms`.`customeraddresses` (`Id`),
+ADD CONSTRAINT `booking_ibfk_4`
+  FOREIGN KEY (`ReceipientCustomerAddressId`)
+  REFERENCES `cms`.`customeraddresses` (`Id`);
+
+  --------------------------------------------------------------------------------------
+
+  11/06/2022
+
+  ALTER TABLE `cms`.`booking` 
+ADD COLUMN `InvoiceNumber` VARCHAR(45) NULL DEFAULT NULL AFTER `ShipmentMode`;
+
+
+  --------------------------------------------------------------------------------------
+    20/06/2022
+
+  ALTER TABLE `cms`.`booking` 
+ADD COLUMN `PayLaterBy` INT NULL DEFAULT NULL AFTER `PaymentMode`;
+
+--------------------------------------------------------------------------------------
+21/06/2022
+
+CREATE TABLE `cms`.`bookingpayment` (
+  `Id` INT NOT NULL AUTO_INCREMENT,
+  `BookingId` INT NOT NULL,
+  `BookingItemId` INT NOT NULL,
+  `JourneyId` INT NULL DEFAULT NULL,
+  `JourneyItemId` INT NULL DEFAULT NULL,
+  `PaymentMode` CHAR(1) NOT NULL,
+  `TotalQuantity` INT NOT NULL,
+  `TotalDispatchedQuantity` INT NULL DEFAULT NULL,
+  `TotalAmountToPay` DECIMAL(18,2) NULL,
+  `TotalAmountPaid` DECIMAL(18,2) NULL,
+  `IsPaymentCompleted` tinyint(1) DEFAULT '0',
+  `PayLaterBy` INT NULL DEFAULT NULL,  
+  `CreatedDate` DATETIME NOT NULL,
+  PRIMARY KEY (`Id`),
+  KEY `BookingId` (`BookingId`),
+  KEY `BookingItemId` (`BookingItemId`),
+  KEY `JourneyId` (`JourneyId`),
+  KEY `JourneyItemId` (`JourneyItemId`),
+  CONSTRAINT `booking_p_fk1` FOREIGN KEY (`BookingId`) REFERENCES `booking` (`Id`),
+  CONSTRAINT `bookingitems_p_fk2` FOREIGN KEY (`BookingItemId`) REFERENCES `bookingitems` (`Id`),
+  CONSTRAINT `journey_p_fk3` FOREIGN KEY (`JourneyId`) REFERENCES `journey` (`Id`),
+  CONSTRAINT `journeyItems_p_fk4` FOREIGN KEY (`JourneyItemId`) REFERENCES `journeyitems` (`Id`)
+)ENGINE=InnoDB AUTO_INCREMENT=116 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+  --------------------------------------------------------------------------------------
+
+  24/06/2022
+
+  CREATE TABLE `cms`.`paymentstatus` (
+  `Id` INT NOT NULL,
+  `PaymentStatusId` VARCHAR(5) NOT NULL,
+  `PaymentStatusName` VARCHAR(25) NOT NULL,
+  PRIMARY KEY (`Id`));
+
+  -----------------------------
+
+  INSERT INTO `cms`.`paymentstatus`
+(`Id`,
+`PaymentStatusId`,
+`PaymentStatusName`)
+VALUES
+(1,	'NP'	,'Not paid'),
+(2	,'FP'	,'Fully paid'),
+(3,	'PP'	,'Partially paid'),
+(4	,'PL',	'Pay Later');
+
+  --------------------------------------------------------------------------------------
+
+  INSERT INTO `cms`.`bookingstatus`
+(`Id`,
+`Name`,
+`Description`,
+`CreateDate`,
+`CreatedBy`,
+`UpdatedDate`,
+`UpdatedBy`,
+`IsJourney`,
+`IsHub`,
+`IsCustomerStatus`)
+VALUES
+('CR', 'Customer Return', NULL, '2022-02-27 11:22:32', '1', '2022-02-27 11:22:32', NULL, '0', '0', '0');
+
+
+--------------------------------------------------------------------------------------
+18/07/2022
+
+ALTER TABLE `cms`.`bookingpayment` 
+ADD COLUMN `paidby` INT NULL DEFAULT NULL,
+ADD COLUMN `paiddate` datetime NULL DEFAULT NULL,
+ADD INDEX `paidby_fk5` (`paidby` ASC) VISIBLE;
+;
+ALTER TABLE `cms`.`bookingpayment` 
+ADD CONSTRAINT `paidby_fk5`
+  FOREIGN KEY (`paidby`)
+  REFERENCES `cms`.`customer` (`Id`)
+  ON DELETE RESTRICT
+  ON UPDATE RESTRICT;
+
+  --------------------------------------------------------------------------------------
+
+CREATE TABLE `cms`.`customerDiscounts` (
+  `Id` INT NOT NULL AUTO_INCREMENT,
+  `DiscountAmount` DECIMAL(18,2) NOT NULL,
+  `CustomerId` INT NOT NULL,
+  `DiscountGivenBy` INT NOT NULL,
+  `DiscountBookingIds` Text NULL DEFAULT NULL,
+  `CreatedDate` DATETIME NOT NULL,
+  PRIMARY KEY (`Id`),
+  KEY `CustomerId` (`CustomerId`),
+  CONSTRAINT `CustomerId_fk1` FOREIGN KEY (`CustomerId`) REFERENCES `customer` (`Id`)
+)ENGINE=InnoDB AUTO_INCREMENT=116 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+--------------------------------------------------------------------------------------
+
+ALTER TABLE `cms`.`booking` 
+ADD COLUMN `TotalAmountReceived` DECIMAL(18,2) NULL DEFAULT 0 AFTER `NetAmnount`,
+ADD COLUMN `TotalDiscountGiven` DECIMAL(18,2) NULL DEFAULT 0 AFTER `NetAmnount`;
+
+ALTER TABLE `cms`.`bookingpayment` 
+ADD COLUMN `Discount` DECIMAL(18,2) NULL DEFAULT 0 AFTER `TotalAmountPaid`;
+
+
+--------------------------------------------------------------------------------------
+
+
+INSERT INTO `cms`.`userroles`
+(`UserRoleName`,`ParentId`,`Notes`,`CreatedDate`,`CreatedBy`,`UpdatedDate`,`UpdatedBy`)
+VALUES
+('Admin',NULL,'Admin','2021-12-06 18:32:39',1,'2021-12-06 18:32:39',1),
+('Director',NULL,'Director','2021-12-06 18:32:39',1,'2021-12-06 18:32:39',1),
+('Consignment user',NULL,'Consignment user','2021-12-06 18:32:39',1,'2021-12-06 18:32:39',1),
+('SalesUser',NULL,'SalesUser','2021-12-06 18:32:39',1,'2021-12-06 18:32:39',1),
+('AccountUser',NULL,'AccountUser','2021-12-06 18:32:39',1,'2021-12-06 18:32:39',1);
+
+-------------------------------------------
+
+ALTER TABLE `cms`.`user` 
+DROP FOREIGN KEY `user_hub_id-fk`;
+ALTER TABLE `cms`.`user` 
+ADD COLUMN `UserRoleId` INT NULL DEFAULT NULL AFTER `HubId`,
+CHANGE COLUMN `HubId` `HubId` INT NULL ,
+ADD INDEX `user_infkrole_idx` (`UserRoleId` ASC) VISIBLE;
+;
+ALTER TABLE `cms`.`user` 
+ADD CONSTRAINT `user_hub_id-fk`
+  FOREIGN KEY (`HubId`)
+  REFERENCES `cms`.`hub` (`Id`),
+ADD CONSTRAINT `user_infkrole`
+  FOREIGN KEY (`UserRoleId`)
+  REFERENCES `cms`.`userroles` (`Id`)
+  ON DELETE RESTRICT
+  ON UPDATE RESTRICT;
+
+--------------------------------------------------------------------------------------
+
+
+ALTER TABLE `cms`.`booking` 
+ADD COLUMN `IsEmailNotificationSent` TINYINT(1) NULL DEFAULT 1 AFTER `JourneyId`;
+
+ALTER TABLE `cms`.`bookingpayment` 
+ADD COLUMN `AdditionalCharge` DECIMAL(18,2) NULL DEFAULT '0.00' AFTER `Discount`;
+
+
+--------------------------------------------------------------------------------------
+
+
+CREATE TABLE `exceptionlogs` (
+  `Id` int NOT NULL,
+  `FunctionName` varchar(45) DEFAULT 'null',
+  `ControllerName` varchar(45) DEFAULT 'null',
+  `ExceptionDetails` longtext,
+  `CreatedDate` datetime NOT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+
